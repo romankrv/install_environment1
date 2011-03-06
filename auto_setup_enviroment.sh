@@ -1,20 +1,28 @@
 #! /bin/bash
-NAME_ENV=PR1
-PROJECT_FOLDER_ROOT=~/
-PROJECT_NAME=assmt-web-app
+echo -e "Please checkout that WGEN-VPN is work after it press RETURN-key"
+read
+NAME_ENV=PROJ
+PROJECT_ROOT=~/
+PROJECT_NAME=assmt-web-app_1
 SQLDEVELOPER=~/bin/sqldeveloper
-FolderVirtualenvWrapper=~/VIRTUALENVS
+FolderVirt=~/VIRTUALENVS
 
-if [ ! `type -t alien` ]; then
-    sudo aptitude install alien
+type -t alien >/dev/null || sudo aptitude install -y alien
+type -t aptitude >/dev/null || sudo apt-get install -y aptitude
+type -t git >/dev/null || sudo aptitude install -y git gitk git-gui
+type -t ruby >/dev/null || sudo aptitude install -y ruby-full libyaml-ruby libzlib-ruby libopenssl-ruby
+type -t apache2 >/dev/null || sudo aptitude install -y apache2
+type -t libapache2-mod-wsgi >/dev/null || sudo aptitude install -y libapache2-mod-wsgi
+type -P python-config >/dev/null || sudo aptitude install -y python-dev
+type -P certutil >/dev/null || sudo aptitude install -y libnss3-tools
+
+# build-essential installing
+if [ -z `ls /usr/share | grep build-essential` ]; then
+	sudo aptitude install -y build-essential
 fi
 
-if [ ! `type -t aptitude` ]; then
-    sudo apt-get install aptitude
-fi
-
-sudo aptitude install python-dev
-sudo pip install virtualenvwrapper
+sudo a2enmod proxy
+sudo a2enmod proxy_http
 
 file="pip-0.8.2.tar.gz"
 if [ ! `type -t pip` ]; then
@@ -24,11 +32,7 @@ if [ ! `type -t pip` ]; then
     sudo python setup.py install
     cd .. && rm $file
 fi
-
-if [ ! `type -t ruby` ]; then
-    sudo aptitude install ruby ruby-full rdoc irb libyaml-ruby libzlib-ruby
-    sudo aptitude install ri libopenssl-ruby ruby1.8-dev build-essential
-fi
+sudo pip install virtualenvwrapper
 
 if [ ! `type -t gem` ]; then
     wget http://production.cf.rubygems.org/rubygems/rubygems-1.5.2.tgz
@@ -39,14 +43,9 @@ if [ ! `type -t gem` ]; then
     sudo ln -s /usr/bin/gem1.8 /usr/bin/gem
 fi
 
-sudo pip install virtualenvwrapper
-
-if [ -d $FolderVirtualenvWrapper ]; then
-    export WORKON_HOME=$FolderVirtualenvWrapper
-else
-    mkdir $FolderVirtualenvWrapper
-    export WORKON_HOME=$FolderVirtualenvWrapper
-    source /usr/local/bin/virtualenvwrapper.sh
+# haml installing
+if [[ -z `gem list | grep haml` ]]; then
+        sudo gem install haml
 fi
 
 file="oracle-instantclient-devel-10.2.0.3-1.i386.rpm"
@@ -92,9 +91,10 @@ echo export PATH=$ORACLE_HOME/bin:$PATH >> ~/.bashrc
 echo export LD_LIBRARY_PATH=$ORACLE_HOME/lib:$LD_LIBRARY_PATH >> ~/.bashrc
 echo export TNS_ADMIN=~/oracle_conf >> ~/.bashrc
 echo alias sqldeveloper=$SQLDEVELOPER"sqldeveloper/sqldeveloper.sh" >> ~/.bachrc
+echo export ASSESS_HOME=$PROJECT_ROOT$PROJECT_NAME >> ~/.bashrc
 echo export LANG="ru_RU.utf8" >> ~/.bachrc
 echo workon $NAME_ENV >> ~/.bashrc
-echo cd $PROJECT_FOLDER_ROOT$PROJECT_NAME >> ~/.bashrc
+echo cd $PROJECT_ROOT$PROJECT_NAME >> ~/.bashrc
 
 source ~/.bashrc
 
@@ -120,36 +120,45 @@ else
     cp -a sqldeveloper $SQLDEVELOPER
 fi
 
-
 if [ ! -d ~/oracle_conf ]; then
     wget http://dl.dropbox.com/u/1155913/Oracle_tools/oracle_conf.tar.gz
     tar -zxf oracle_conf.tar.gz
     cp -a oracle_conf ~
 fi
 
-#echo export LIBRARY_PATH=$ORACLE_HOME/lib >> ~/.bachrc # if you have error try open this
-#echo export CPATH=$ORACLE_HOME/sdk/include >>~/.bachrc # if you have error try open this
-
-echo "CREATE VIRTUAL ENVIRONMENT..."
-sudo pip install -r requirements.txt
-cd $FolderVirtualenvWrapper
-virtualenv $NAME_ENV
-source $NAME_ENV/bin/activate
-
-echo "Install NAPI requirement"
-sudo easy_install assess/lib/wgen.httpconn-development-py2.6.egg
-sudo easy_install assess/lib/napiclient-development-py2.6.egg
-
-if [ ! -d $PROJECT_FOLDER_ROOT/$PROJECT_NAME ]; then
-    cd $PROJECT_FOLDER_ROOT
-    git clone git@mcgit.mc.wgenhq.net:mclass/assmt-web-app $PROJECT_NAME
-    cd $PROJECT_FOLDER_ROOT/$PROJECT_NAME
-    sudo pip install -r requirements.txt
-else
-    cd $PROJECT_FOLDER_ROOT/$PROJECT_NAME
-    git pull
-    sudo pip install -r requirements.txt
+# virtualenvwrapper prepare environment
+export WORKON_HOME=$FolderVirt
+if [ ! -d $FolderVirt ]; then
+    mkdir $FolderVirt
+    source /usr/local/bin/virtualenvwrapper.sh
 fi
 
-source ~/.profile
-source ~/.bashrc
+# cloning project
+if [ ! -d $PROJECT_ROOT/$PROJECT_NAME ]; then
+    cd $PROJECT_ROOT
+    git clone git@mcgit.mc.wgenhq.net:mclass/assmt-web-app $PROJECT_NAME
+else
+    cd $PROJECT_ROOT/$PROJECT_NAME
+    git pull
+fi
+
+# create virtual environment
+if [ ! -d $FolderVirt/$NAME_ENV ]; then
+    echo "CREATE VIRTUAL ENVIRONMENT ..."
+    virtualenv $FolderVirt/$NAME_ENV
+    source $FolderVirt/$NAME_ENV/bin/activate
+    cd $PROJECT_ROOT/$PROJECT_NAME
+    rake setup:nsscert
+    echo "Install NAPI requirement..."
+    easy_install assess/lib/wgen.httpconn-development-py2.6.egg
+    easy_install assess/lib/napiclient-development-py2.6.egg
+    pip install -r requirements.txt
+    sudo mkdir -p /opt/wgen/log/assess/
+    sudo chown -R -L $USER /opt/wgen/log/assess
+    export ASSESS_HOME=PROJECT_ROOT/$PROJECT_NAME
+else
+    echo "UPDATE VIRTUAL ENVIRONMENT ..."
+fi
+
+#source ~/.profile
+#source ~/.bashrc
