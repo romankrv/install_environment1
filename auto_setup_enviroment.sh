@@ -1,9 +1,9 @@
 #! /bin/bash
 echo -e "Please checkout that WGEN-VPN is work after it press RETURN-key"
 read
-NAME_ENV=PROJ
+NAME_ENV=ASSESS
 PROJECT_ROOT=~/
-PROJECT_NAME=assmt-web-app_1
+PROJECT_NAME=assmt-web-app
 SQLDEVELOPER=~/bin/sqldeveloper
 FolderVirt=~/VIRTUALENVS
 
@@ -49,41 +49,19 @@ if [[ -z `gem list | grep haml` ]]; then
 fi
 
 file="oracle-instantclient-devel-10.2.0.3-1.i386.rpm"
-txt=`dpkg -L oracle-instantclient-devel | grep oracle/10.2.0.3/client/cdemo81.c`
-if [ -z txt ]; then
-    if [ -e $file ]; then
-	sudo alien -i $file
-    else
-        wget http://dl.dropbox.com/u/1155913/Oracle_tools/oracle-instantclient-devel-10.2.0.3-1.i386.rpm
-	sudo alien -i $file
-    fi
-fi
+wget http://dl.dropbox.com/u/1155913/Oracle_tools/$file
+sudo alien -i $file
 
 file="oracle-instantclient-basic-10.2.0.3-1.i386.rpm"
-txt=`dpkg -L oracle-instantclient-basic | grep oracle/10.2.0.3/client/bin/genezi`
-if [ -z txt ]; then
-    if [ -e $file ]; then
-	sudo alien -i $file
-    else
-	wget http://dl.dropbox.com/u/1155913/Oracle_tools/oracle-instantclient-basic-10.2.0.3-1.i386.rpm
-	sudo alien -i $file
-    fi
-fi
+wget http://dl.dropbox.com/u/1155913/Oracle_tools/$file
+sudo alien -i $file
 
 file="oracle-instantclient-sqlplus-10.2.0.3-1.i386.rpm"
-txt=`dpkg -L oracle-instantclient-sqlplus | grep oracle/10.2.0.3/client/lib/glogin.sql`
-if [ -z txt ]; then
-    if [ -e $file ]; then
-	sudo alien -i $file
-    else
-	wget http://dl.dropbox.com/u/1155913/Oracle_tools/$file
-	sudo alien -i $file
-    fi
-fi
+wget http://dl.dropbox.com/u/1155913/Oracle_tools/$file
+sudo alien -i $file
 
 sudo ln -sf $ORACLE_HOME/lib/libclntsh.so.10.1 $ORACLE_HOME/lib/liblclntsh.so
 sudo ln -sf $ORACLE_HOME/lib/libocci.so.10.1 $ORACLE_HOME/lib/libocci.so
-
 
 echo -e "\n#Oracle configuration " >> ~/.bashrc 
 echo export ORACLE_HOME=/usr/lib/oracle/10.2.0.3/client >> ~/.bashrc
@@ -137,6 +115,8 @@ fi
 if [ ! -d $PROJECT_ROOT/$PROJECT_NAME ]; then
     cd $PROJECT_ROOT
     git clone git@mcgit.mc.wgenhq.net:mclass/assmt-web-app $PROJECT_NAME
+    echo "Fix requirement.txt"
+    read
 else
     cd $PROJECT_ROOT/$PROJECT_NAME
     git pull
@@ -157,7 +137,7 @@ if [ ! -d $FolderVirt/$NAME_ENV ]; then
     sudo chown -R -L $USER /opt/wgen/log/assess
     export ASSESS_HOME=PROJECT_ROOT/$PROJECT_NAME
 else
-    echo "UPDATE VIRTUAL ENVIRONMENT ..."
+    echo "UPDATE VIRTUAL ENVIRONMENT via pip install -r [file] ..."
 fi
 
 #source ~/.profile
