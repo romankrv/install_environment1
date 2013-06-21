@@ -24,20 +24,21 @@ fi
 sudo a2enmod proxy
 sudo a2enmod proxy_http
 
-file="pip-0.8.2.tar.gz"
+file="pip-1.3.1.tar.gz"
 if [ ! `type -t pip` ]; then
     wget http://pypi.python.org/packages/source/p/pip/$file
-    tar -xf $file 
-    cd pip-0.8.2
+    tar -xf $file
+    cd pip-1.3.1
     sudo python setup.py install
+    sudo pip install --upgrade
     cd .. && rm $file
 fi
 sudo pip install virtualenvwrapper
 
 if [ ! `type -t gem` ]; then
-    wget http://production.cf.rubygems.org/rubygems/rubygems-1.5.2.tgz
-    tar -zxf rubygems-1.5.2.tgz
-    cd rubygems-1.5.2
+    wget http://production.cf.rubygems.org/rubygems/rubygems-2.0.3.tgz
+    tar -zxf rubygems-2.0.3.tgz
+    cd rubygems-2.0.3
     sudo ruby setup.rb
     sudo gem update --system
     sudo ln -s /usr/bin/gem1.8 /usr/bin/gem
@@ -45,7 +46,7 @@ fi
 
 # haml installing
 if [[ -z `gem list | grep haml` ]]; then
-        sudo gem install haml
+    sudo gem install haml
 fi
 
 file="oracle-instantclient-devel-10.2.0.3-1.i386.rpm"
